@@ -1,0 +1,1647 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Master: AI Instructor & PPTX Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Native modal dialog scroll containment & backdrop styling */
+        dialog:modal {
+            overscroll-behavior: contain;
+        }
+
+        dialog::backdrop {
+            background-color: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            overflow: hidden;
+            overscroll-behavior: contain;
+        }
+
+        .markdown-body h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-top: 0.75rem;
+            margin-bottom: 0.5rem;
+            color: #1e3a8a;
+        }
+
+        .markdown-body h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 1rem;
+            margin-bottom: 0.4rem;
+            color: #1d4ed8;
+        }
+
+        .markdown-body h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+            color: #1e40af;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.65rem;
+            line-height: 1.65;
+            color: #334155;
+        }
+
+        .markdown-body strong {
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .markdown-body ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #334155;
+        }
+
+        .markdown-body ol {
+            list-style-type: decimal;
+            margin-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #334155;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.3rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-100 via-blue-50/40 to-indigo-100/50 min-h-screen p-3 sm:p-6 flex items-center justify-center">
+
+    <main class="w-full max-w-5xl bg-white rounded-2xl shadow-xl border border-slate-200/80 overflow-hidden flex flex-col h-[92vh]">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 px-5 py-4 sm:px-6 sm:py-5 text-white shadow-md flex-shrink-0">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="text-left">
+                    <h1 class="text-2xl sm:text-3xl font-extrabold flex items-center gap-2 tracking-tight">
+                        <span>👨‍🏫</span> Study Master: AI Instructor
+                    </h1>
+                    <p class="mt-1 text-blue-100 text-xs sm:text-sm">
+                        I-upload ang images, slides, o notes — ie-explain in natural Taglish at gagawing ready-to-present <strong>PowerPoint (.pptx)</strong> na may Speaker Notes!
+                    </p>
+                </div>
+
+                <!-- Settings & API Status Controls -->
+                <div class="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
+                    <button id="openGuideBtn" type="button"
+                        class="bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-medium px-3 py-2 rounded-xl border border-white/20 transition-colors flex items-center gap-1.5"
+                        title="Paano kumuha at maglagay ng Gemini API Key">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>API Guide</span>
+                    </button>
+                    <button id="openSettingsBtn" type="button"
+                        class="bg-white text-blue-700 hover:bg-blue-50 text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition-colors flex items-center gap-2">
+                        <span id="apiStatusDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span id="apiStatusLabel">Set API Key</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Content -->
+        <div id="mainScroll" class="flex-grow overflow-y-auto p-5 sm:p-6 flex flex-col gap-5 custom-scrollbar">
+
+            <!-- Missing API Key Callout -->
+            <div id="apiKeyPromptBanner"
+                class="hidden bg-amber-50 border border-amber-300 text-amber-900 px-4 py-3.5 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                <div class="flex items-start gap-2.5">
+                    <span class="text-lg leading-none mt-0.5">🔑</span>
+                    <div class="text-sm">
+                        <p class="font-bold">Wala pang Gemini API Key!</p>
+                        <p class="text-amber-800 text-xs sm:text-sm mt-0.5">
+                            Maglagay muna ng libreng Gemini API key sa Settings para ma-analyze ang iyong mga slides. May step-by-step Taglish guide sa loob!
+                        </p>
+                    </div>
+                </div>
+                <button type="button" id="bannerOpenSettingsBtn"
+                    class="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold px-4 py-2 rounded-lg shadow-sm transition-colors">
+                    Ilagay ang API Key
+                </button>
+            </div>
+
+            <!-- Error Banner -->
+            <div id="errorBanner" class="hidden bg-red-50 border-l-4 border-red-500 text-red-800 p-4 rounded-xl shadow-sm"
+                role="alert">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <p class="font-bold text-sm">Error</p>
+                        <p id="errorText" class="text-sm mt-0.5">May nangyaring error. Subukan ulit.</p>
+                    </div>
+                    <button type="button" id="dismissErrorBtn" aria-label="Isara ang error"
+                        class="text-red-500 hover:text-red-700 font-bold text-lg leading-none">&times;</button>
+                </div>
+            </div>
+
+            <!-- Info / Fallback Notice Banner -->
+            <div id="infoBanner" class="hidden bg-indigo-50 border border-indigo-200 text-indigo-800 px-4 py-3 rounded-xl text-sm flex items-center justify-between gap-2">
+                <span id="infoText"></span>
+                <button type="button" id="dismissInfoBtn" aria-label="Isara ang mensahe"
+                    class="text-indigo-500 hover:text-indigo-700 font-bold text-lg leading-none">&times;</button>
+            </div>
+
+            <!-- Topic Input + Active Model Pill -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label for="topicInput" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                        Subject / Topic <span class="text-slate-400 font-normal">(Optional — auto-detect ng AI kung blank)</span>
+                    </label>
+                    <input type="text" id="topicInput"
+                        placeholder="e.g., Biology, Accounting, Philippine History, Calculus, Programming..."
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm text-slate-800 bg-slate-50 focus:bg-white" />
+                </div>
+                <div class="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-600 flex items-center justify-between">
+                    <div class="truncate">
+                        <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Active Model</span>
+                        <span id="activeModelSummary" class="font-semibold text-slate-800">gemini-3-flash-preview</span>
+                    </div>
+                    <span class="text-[11px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-md ml-2 flex-shrink-0">Auto Fallback</span>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div class="w-full">
+                <label for="fileUpload" id="dropZone"
+                    class="flex flex-col items-center justify-center w-full h-36 sm:h-40 border-2 border-blue-300 border-dashed rounded-xl cursor-pointer bg-blue-50/70 hover:bg-blue-100/70 transition-colors duration-200 relative">
+                    <div class="flex flex-col items-center justify-center py-4 px-4 text-center">
+                        <svg class="w-9 h-9 mb-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p class="mb-1 text-sm text-blue-900">
+                            <span class="font-semibold">Click to upload</span>, drag &amp; drop, o <kbd class="px-1.5 py-0.5 text-xs bg-white border border-blue-200 rounded shadow-sm font-mono">Ctrl+V</kbd> para mag-paste ng screenshot
+                        </p>
+                        <p class="text-xs text-blue-600">
+                            Supported: PNG, JPG, WEBP, PDF, PPTX (Multiple files allowed — gagawing PPTX slides!)
+                        </p>
+                    </div>
+                    <input id="fileUpload" type="file" class="hidden" multiple
+                        accept="image/*, .pdf, .pptx, application/pdf, application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+                </label>
+            </div>
+
+            <!-- File Queue Header & Clear All -->
+            <div id="queueHeader" class="hidden flex items-center justify-between text-xs text-slate-600 -mb-2">
+                <span id="fileCountLabel" class="font-semibold text-slate-700">0 files selected</span>
+                <button type="button" id="clearAllBtn"
+                    class="text-red-600 hover:text-red-700 font-semibold hover:underline">
+                    Alisin Lahat
+                </button>
+            </div>
+
+            <!-- Previews Container -->
+            <div id="previewContainer" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                <!-- Previews injected here -->
+            </div>
+
+            <!-- Action & Export Bar -->
+            <div id="actionContainer"
+                class="hidden flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between border-t border-slate-200 pt-4">
+                <button id="analyzeBtn" type="button"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-7 rounded-xl shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>✨ I-explain ang Files</span>
+                    <svg id="loadingIcon" class="hidden animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+
+                <!-- Export Controls (Shown when results are ready) -->
+                <div id="exportControls" class="hidden flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+                        <label for="pptxLayoutSelect" class="text-xs font-semibold text-slate-600 whitespace-nowrap">PPTX Layout:</label>
+                        <select id="pptxLayoutSelect"
+                            class="text-xs font-medium text-slate-800 bg-transparent outline-none cursor-pointer py-1">
+                            <option value="paired" selected>Image Slide + Explanation Slide + Notes</option>
+                            <option value="notes_only">Image Slide + Speaker Notes Only</option>
+                            <option value="split">Side-by-Side (Image + Notes on Slide)</option>
+                        </select>
+                    </div>
+
+                    <button id="exportPptxBtn" type="button"
+                        class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 px-5 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <span>Export PPTX (.pptx)</span>
+                    </button>
+
+                    <button id="exportMdBtn" type="button"
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-1.5 text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span>Notes (.md)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Loading State with Progress Bar -->
+            <div id="globalLoading" class="hidden flex-col items-center justify-center py-6 bg-blue-50/50 border border-blue-100 rounded-xl px-6">
+                <div class="bg-white p-2.5 w-12 h-12 ring-1 ring-slate-900/5 shadow-md rounded-full flex items-center justify-center mb-3">
+                    <svg class="w-6 h-6 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </div>
+                <p class="text-blue-900 font-semibold text-sm text-center" id="loadingStatusText">Analyzing files... sandali lang.</p>
+                <div class="w-full max-w-md bg-blue-200/70 rounded-full h-2 mt-3 overflow-hidden">
+                    <div id="progressBar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer" class="flex flex-col gap-5">
+                <!-- AI Explanations will appear here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Native Modal Dialog for Settings & API Key Guide -->
+    <dialog id="settingsDialog" closedby="any" aria-labelledby="settingsTitle"
+        class="w-[95vw] max-w-2xl rounded-2xl p-0 shadow-2xl border border-slate-200 bg-white overflow-hidden m-auto">
+        <div class="bg-gradient-to-r from-blue-700 to-indigo-600 px-6 py-4 text-white flex items-center justify-between">
+            <div>
+                <h2 id="settingsTitle" class="text-lg font-bold flex items-center gap-2">
+                    <span>⚙️</span> Settings &amp; Gemini API Configuration
+                </h2>
+                <p class="text-xs text-blue-100 mt-0.5">Ilagay ang sarili mong Gemini API key at pumili ng model.</p>
+            </div>
+            <form method="dialog">
+                <button type="submit" value="close" aria-label="Isara ang Settings"
+                    class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white text-xl leading-none transition-colors">&times;</button>
+            </form>
+        </div>
+
+        <div class="p-6 max-h-[75vh] overflow-y-auto custom-scrollbar space-y-5">
+            <!-- API Key Field -->
+            <div>
+                <label for="apiKeyInput" class="block text-sm font-bold text-slate-800 mb-1.5">
+                    Gemini API Key
+                </label>
+                <div class="flex gap-2">
+                    <div class="relative flex-grow">
+                        <input type="password" id="apiKeyInput" autocomplete="off" spellcheck="false" autofocus
+                            placeholder="I-paste dito ang iyong API key (e.g., AIzaSy...)"
+                            class="w-full pl-3.5 pr-16 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-sm font-mono text-slate-800 bg-slate-50 focus:bg-white" />
+                        <button type="button" id="toggleKeyVisibilityBtn"
+                            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 hover:text-blue-600 px-2 py-1 rounded">
+                            Show
+                        </button>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                    <span>🔒</span>
+                    <span>Naka-save lang ito sa browser mo (<code>localStorage</code>) at diretso lang ipinapadala sa Google Gemini API.</span>
+                </p>
+                <div id="apiTestFeedback" class="hidden mt-2 text-xs font-medium px-3 py-2 rounded-lg"></div>
+            </div>
+
+            <!-- Model & Fallback Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                    <label for="primaryModelSelect" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                        Primary Model (Latest Flash)
+                    </label>
+                    <select id="primaryModelSelect"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-800 focus:border-blue-500 outline-none">
+                        <option value="gemini-3-flash-preview" selected>gemini-3-flash-preview (Default — Recommended)</option>
+                        <option value="gemini-flash-latest">gemini-flash-latest (Auto Latest Flash Alias)</option>
+                        <option value="gemini-3.8-flash">gemini-3.8-flash (Gemini 3.8 Flash)</option>
+                        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Fast &amp; Cost-Efficient)</option>
+                        <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-Fast Lite)</option>
+                        <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Complex Reasoning)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="fallbackModelSelect" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
+                        Fallback Model (Auto-Switch)
+                    </label>
+                    <select id="fallbackModelSelect"
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white text-sm text-slate-800 focus:border-blue-500 outline-none">
+                        <option value="gemini-flash-latest" selected>gemini-flash-latest (Recommended Fallback)</option>
+                        <option value="gemini-3.5-flash-lite">gemini-3.5-flash-lite (Fast &amp; Cost-Efficient)</option>
+                        <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (Ultra-Fast Fallback)</option>
+                        <option value="gemini-3-flash-preview">gemini-3-flash-preview (Gemini 3 Flash Preview)</option>
+                        <option value="gemini-3.8-flash">gemini-3.8-flash (Gemini 3.8 Flash)</option>
+                        <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Pro Fallback)</option>
+                    </select>
+                </div>
+                <p class="sm:col-span-2 text-xs text-slate-500">
+                    💡 Kung mag-rate limit (429), mag-overload (503), o hindi ma-reach ang Primary Model, automatic na magsi-switch ang app sa Fallback Model (at susubukan din ang ibang Flash-Lite backup) para tuloy-tuloy ang paggawa ng notes.
+                </p>
+            </div>
+
+            <!-- Step-by-step Taglish Tutorial on Getting a Gemini API Key -->
+            <details id="apiGuideDetails" class="group rounded-xl border border-blue-200 bg-blue-50/60 overflow-hidden">
+                <summary
+                    class="cursor-pointer px-4 py-3 font-bold text-sm text-blue-900 flex items-center justify-between select-none hover:bg-blue-100/60 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span>📖</span> Paano kumuha at maglagay ng Gemini API Key? (Step-by-Step Guide)
+                    </span>
+                    <span class="text-blue-600 text-xs font-semibold group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="px-4 pb-4 pt-2 text-sm text-slate-700 space-y-3 border-t border-blue-200/70 bg-white">
+                    <ol class="list-decimal list-inside space-y-2.5 text-xs sm:text-sm leading-relaxed">
+                        <li>
+                            Buksan ang <strong>Google AI Studio</strong> sa link na ito:
+                            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer"
+                                class="text-blue-600 hover:text-blue-800 font-semibold underline">
+                                https://aistudio.google.com/apikey ↗
+                            </a>
+                        </li>
+                        <li>
+                            Mag-sign in gamit ang iyong <strong>Google / Gmail account</strong>.
+                        </li>
+                        <li>
+                            I-click ang button na <strong>"Create API key"</strong> (o <strong>"Get API key"</strong>). Kung hihingin na pumili ng project, i-click lang ang <strong>"Create API key in new project"</strong> o pumili ng existing project.
+                        </li>
+                        <li>
+                            Kapag lumabas na ang key (karaniwang nagsisimula sa <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono text-xs">AIza...</code>), i-click ang <strong>Copy</strong>.
+                        </li>
+                        <li>
+                            Bumalik dito sa <strong>Study Master</strong>, i-paste ang key sa <strong>Gemini API Key</strong> box sa itaas, tapos i-click ang <strong>Test Key</strong> at <strong>Save Settings</strong>.
+                        </li>
+                    </ol>
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                        <strong>Paalala sa Seguridad:</strong> Huwag i-share ang iyong API key sa ibang tao o i-post online. Libre ang Google AI Studio free tier para sa personal na pag-aaral, pero may limit kada minuto — kaya may built-in <strong>Auto-Fallback</strong> ang app na ito!
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Dialog Footer -->
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2">
+            <button type="button" id="clearKeyBtn"
+                class="text-xs sm:text-sm font-semibold text-red-600 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
+                Clear Key
+            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" id="testApiKeyBtn"
+                    class="text-xs sm:text-sm font-semibold text-blue-700 bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-xl transition-colors">
+                    Test Key
+                </button>
+                <button type="button" id="saveSettingsBtn"
+                    class="text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-xl shadow-sm transition-colors">
+                    Save Settings
+                </button>
+            </div>
+        </div>
+    </dialog>
+
+    <script>
+        // ==========================================
+        // Constants & Persistent Settings
+        // ==========================================
+        const STORAGE_KEYS = {
+            API_KEY: 'studyMaster_geminiApiKey',
+            PRIMARY_MODEL: 'studyMaster_primaryModel',
+            FALLBACK_MODEL: 'studyMaster_fallbackModel'
+        };
+
+        const DEFAULT_PRIMARY_MODEL = 'gemini-3-flash-preview';
+        const DEFAULT_FALLBACK_MODEL = 'gemini-flash-latest';
+        const EXTRA_FALLBACK_MODELS = [
+            'gemini-3-flash-preview',
+            'gemini-flash-latest',
+            'gemini-3.5-flash-lite',
+            'gemini-3.1-flash-lite',
+            'gemini-3.8-flash'
+        ];
+        let discoveredLiveModels = [];
+
+        // DOM Elements
+        const fileUpload = document.getElementById('fileUpload');
+        const topicInput = document.getElementById('topicInput');
+        const dropZone = document.getElementById('dropZone');
+        const queueHeader = document.getElementById('queueHeader');
+        const fileCountLabel = document.getElementById('fileCountLabel');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const previewContainer = document.getElementById('previewContainer');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const loadingIcon = document.getElementById('loadingIcon');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorText = document.getElementById('errorText');
+        const dismissErrorBtn = document.getElementById('dismissErrorBtn');
+        const infoBanner = document.getElementById('infoBanner');
+        const infoText = document.getElementById('infoText');
+        const dismissInfoBtn = document.getElementById('dismissInfoBtn');
+        const actionContainer = document.getElementById('actionContainer');
+        const exportControls = document.getElementById('exportControls');
+        const pptxLayoutSelect = document.getElementById('pptxLayoutSelect');
+        const exportPptxBtn = document.getElementById('exportPptxBtn');
+        const exportMdBtn = document.getElementById('exportMdBtn');
+        const globalLoading = document.getElementById('globalLoading');
+        const loadingStatusText = document.getElementById('loadingStatusText');
+        const progressBar = document.getElementById('progressBar');
+        const mainScroll = document.getElementById('mainScroll');
+
+        // Settings DOM Elements
+        const settingsDialog = document.getElementById('settingsDialog');
+        const openSettingsBtn = document.getElementById('openSettingsBtn');
+        const openGuideBtn = document.getElementById('openGuideBtn');
+        const bannerOpenSettingsBtn = document.getElementById('bannerOpenSettingsBtn');
+        const apiKeyPromptBanner = document.getElementById('apiKeyPromptBanner');
+        const apiStatusDot = document.getElementById('apiStatusDot');
+        const apiStatusLabel = document.getElementById('apiStatusLabel');
+        const activeModelSummary = document.getElementById('activeModelSummary');
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const toggleKeyVisibilityBtn = document.getElementById('toggleKeyVisibilityBtn');
+        const primaryModelSelect = document.getElementById('primaryModelSelect');
+        const fallbackModelSelect = document.getElementById('fallbackModelSelect');
+        const apiGuideDetails = document.getElementById('apiGuideDetails');
+        const apiTestFeedback = document.getElementById('apiTestFeedback');
+        const clearKeyBtn = document.getElementById('clearKeyBtn');
+        const testApiKeyBtn = document.getElementById('testApiKeyBtn');
+        const saveSettingsBtn = document.getElementById('saveSettingsBtn');
+
+        // App State
+        let selectedFiles = []; // Array of { file, previewUrl }
+        let globalResults = []; // Array of { slide, filename, text, modelUsed, usedFallback, isImage, dataUrl, mimeType }
+
+        // ==========================================
+        // Dialog Light-Dismiss Fallback (for Safari)
+        // ==========================================
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+            const isOutside = (e, dialog) => {
+                const r = dialog.getBoundingClientRect();
+                return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+            };
+            let pressedOutside = false;
+            settingsDialog.addEventListener('pointerdown', (e) => {
+                pressedOutside = isOutside(e, settingsDialog);
+            });
+            settingsDialog.addEventListener('pointerup', (e) => {
+                if (pressedOutside && isOutside(e, settingsDialog)) {
+                    settingsDialog.close();
+                }
+            });
+        }
+
+        settingsDialog.addEventListener('close', () => {
+            settingsDialog.returnValue = '';
+        });
+
+        // ==========================================
+        // Settings Management & Live Model Discovery
+        // ==========================================
+        function sanitizeApiKey(raw) {
+            return (raw || '')
+                .trim()
+                .replace(/^(GEMINI_API_KEY|GOOGLE_API_KEY)\s*=\s*/i, '')
+                .replace(/^['"`]+|['"`]+$/g, '')
+                .replace(/\s+/g, '');
+        }
+
+        function getSettings() {
+            return {
+                apiKey: sanitizeApiKey(localStorage.getItem(STORAGE_KEYS.API_KEY) || ''),
+                primaryModel: localStorage.getItem(STORAGE_KEYS.PRIMARY_MODEL) || DEFAULT_PRIMARY_MODEL,
+                fallbackModel: localStorage.getItem(STORAGE_KEYS.FALLBACK_MODEL) || DEFAULT_FALLBACK_MODEL
+            };
+        }
+
+        function ensureSelectOption(selectEl, value, label) {
+            if (!value) return;
+            const exists = Array.from(selectEl.options).some(opt => opt.value === value);
+            if (!exists) {
+                const opt = document.createElement('option');
+                opt.value = value;
+                opt.textContent = label || value;
+                selectEl.appendChild(opt);
+            }
+        }
+
+        function rankFlashModel(name) {
+            // Higher score = newer / better default Flash model
+            const n = name.toLowerCase();
+            if (!n.includes('gemini')) return -100;
+            if (n.includes('tts') || n.includes('image') || n.includes('embedding') || n.includes('live') || n.includes('audio') || n.includes('robotics') || n.includes('computer-use') || n.includes('transcribe')) {
+                return -100;
+            }
+            let score = 0;
+            if (n.includes('flash')) score += 100;
+            else if (n.includes('pro')) score += 20;
+            if (n.includes('lite')) score -= 5; // Prefer full flash over lite as primary, lite as fallback
+            const verMatch = n.match(/gemini-(\d+)(?:\.(\d+))?/);
+            if (verMatch) {
+                score += parseInt(verMatch[1], 10) * 20 + parseInt(verMatch[2] || '0', 10) * 2;
+            }
+            if (n === 'gemini-flash-latest') score += 55;
+            if (n.includes('preview') || n.includes('exp')) score -= 1;
+            return score;
+        }
+
+        async function discoverAvailableModels(apiKey) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}&pageSize=100`;
+            const res = await fetch(url, { method: 'GET' });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                const msg = data.error?.message || `HTTP ${res.status}`;
+                throw new Error(msg);
+            }
+
+            const models = (data.models || [])
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => (m.name || '').replace(/^models\//, ''))
+                .filter(name => rankFlashModel(name) > 0);
+
+            models.sort((a, b) => rankFlashModel(b) - rankFlashModel(a));
+            discoveredLiveModels = [...new Set(models)];
+
+            // Populate dropdowns with live models available on this API key
+            discoveredLiveModels.forEach(modelId => {
+                ensureSelectOption(primaryModelSelect, modelId, `${modelId} (Available)`);
+                ensureSelectOption(fallbackModelSelect, modelId, `${modelId} (Available)`);
+            });
+
+            return discoveredLiveModels;
+        }
+
+        function getModelFallbackChain() {
+            const { primaryModel, fallbackModel } = getSettings();
+            const chain = [primaryModel, fallbackModel, ...discoveredLiveModels, ...EXTRA_FALLBACK_MODELS];
+            // Deduplicate while preserving order
+            return [...new Set(chain.filter(Boolean))];
+        }
+
+        function syncSettingsUI() {
+            const { apiKey, primaryModel, fallbackModel } = getSettings();
+            apiKeyInput.value = apiKey;
+            ensureSelectOption(primaryModelSelect, primaryModel, primaryModel);
+            ensureSelectOption(fallbackModelSelect, fallbackModel, fallbackModel);
+            primaryModelSelect.value = primaryModel;
+            fallbackModelSelect.value = fallbackModel;
+            activeModelSummary.textContent = primaryModel;
+
+            if (apiKey) {
+                apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500';
+                apiStatusLabel.textContent = 'API Key Ready';
+                apiKeyPromptBanner.classList.add('hidden');
+            } else {
+                apiStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+                apiStatusLabel.textContent = 'Set API Key';
+                apiKeyPromptBanner.classList.remove('hidden');
+            }
+        }
+
+        function openSettingsModal(expandGuide = false) {
+            syncSettingsUI();
+            apiTestFeedback.classList.add('hidden');
+            apiGuideDetails.open = expandGuide || !getSettings().apiKey;
+            if (!settingsDialog.open) {
+                settingsDialog.showModal();
+            }
+        }
+
+        openSettingsBtn.addEventListener('click', () => openSettingsModal(false));
+        openGuideBtn.addEventListener('click', () => openSettingsModal(true));
+        bannerOpenSettingsBtn.addEventListener('click', () => openSettingsModal(true));
+
+        toggleKeyVisibilityBtn.addEventListener('click', () => {
+            const isHidden = apiKeyInput.type === 'password';
+            apiKeyInput.type = isHidden ? 'text' : 'password';
+            toggleKeyVisibilityBtn.textContent = isHidden ? 'Hide' : 'Show';
+        });
+
+        saveSettingsBtn.addEventListener('click', () => {
+            const key = sanitizeApiKey(apiKeyInput.value);
+            apiKeyInput.value = key;
+            if (key) {
+                localStorage.setItem(STORAGE_KEYS.API_KEY, key);
+            } else {
+                localStorage.removeItem(STORAGE_KEYS.API_KEY);
+            }
+            localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, primaryModelSelect.value);
+            localStorage.setItem(STORAGE_KEYS.FALLBACK_MODEL, fallbackModelSelect.value);
+
+            syncSettingsUI();
+            settingsDialog.close();
+            if (key) {
+                showInfo(`Settings saved! Primary model: ${primaryModelSelect.value} (Fallback: ${fallbackModelSelect.value}).`);
+            }
+        });
+
+        clearKeyBtn.addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEYS.API_KEY);
+            apiKeyInput.value = '';
+            apiTestFeedback.classList.add('hidden');
+            syncSettingsUI();
+        });
+
+        testApiKeyBtn.addEventListener('click', async () => {
+            const key = sanitizeApiKey(apiKeyInput.value);
+            apiKeyInput.value = key;
+            if (!key) {
+                showTestFeedback('Maglagay muna ng API key bago i-test.', false);
+                return;
+            }
+
+            testApiKeyBtn.disabled = true;
+            testApiKeyBtn.textContent = 'Testing...';
+            showTestFeedback('Sinusubukan ang API key at hinahanap ang latest available Flash models...', null);
+
+            try {
+                // Step 1: Verify API key directly via Models List endpoint (avoids false 404s)
+                const liveModels = await discoverAvailableModels(key);
+
+                // Auto-pick the best available primary & fallback models if current choices aren't in the live list
+                if (liveModels.length > 0) {
+                    if (!liveModels.includes(primaryModelSelect.value)) {
+                        primaryModelSelect.value = liveModels[0];
+                    }
+                    if (!liveModels.includes(fallbackModelSelect.value) || fallbackModelSelect.value === primaryModelSelect.value) {
+                        fallbackModelSelect.value = liveModels[1] || liveModels[0];
+                    }
+                }
+
+                // Step 2: Run a quick generateContent ping on the selected model
+                const testCandidates = [...new Set([primaryModelSelect.value, fallbackModelSelect.value, ...liveModels])];
+                let workingModel = null;
+                let lastPingError = '';
+
+                for (const model of testCandidates.slice(0, 4)) {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ role: 'user', parts: [{ text: 'Reply with OK' }] }],
+                            generationConfig: { maxOutputTokens: 8 }
+                        })
+                    });
+
+                    const data = await res.json().catch(() => ({}));
+                    if (res.ok) {
+                        workingModel = model;
+                        break;
+                    }
+                    lastPingError = data.error?.message || `HTTP ${res.status}`;
+                    if ((res.status === 400 || res.status === 401 || res.status === 403) && /api key|permission|unauthenticated|invalid/i.test(lastPingError)) {
+                        throw new Error(lastPingError);
+                    }
+                }
+
+                if (workingModel) {
+                    // Auto-save working key and models so the user is immediately ready!
+                    primaryModelSelect.value = workingModel;
+                    const fallbackChoice = liveModels.find(m => m !== workingModel) || fallbackModelSelect.value;
+                    ensureSelectOption(fallbackModelSelect, fallbackChoice, fallbackChoice);
+                    fallbackModelSelect.value = fallbackChoice;
+
+                    localStorage.setItem(STORAGE_KEYS.API_KEY, key);
+                    localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, workingModel);
+                    localStorage.setItem(STORAGE_KEYS.FALLBACK_MODEL, fallbackChoice);
+                    syncSettingsUI();
+
+                    showTestFeedback(`✅ Gumagana at naka-save na ang API Key! Active model: ${workingModel} (Fallback: ${fallbackChoice}).`, true);
+                } else {
+                    // Key is valid (models list succeeded), just rate-limited or quota-capped right now
+                    localStorage.setItem(STORAGE_KEYS.API_KEY, key);
+                    localStorage.setItem(STORAGE_KEYS.PRIMARY_MODEL, primaryModelSelect.value);
+                    localStorage.setItem(STORAGE_KEYS.FALLBACK_MODEL, fallbackModelSelect.value);
+                    syncSettingsUI();
+                    showTestFeedback(`⚠️ Valid ang API Key (saved!), pero nag-return ng: ${lastPingError}. Subukan ulit pagkalipas ng ilang segundo.`, true);
+                }
+            } catch (err) {
+                showTestFeedback(`❌ Hindi gumana ang API Key: ${err.message || 'Network/CORS error'}. Siguraduhing kumpleto ang kinopyang key mula sa aistudio.google.com/apikey.`, false);
+            } finally {
+                testApiKeyBtn.disabled = false;
+                testApiKeyBtn.textContent = 'Test Key';
+            }
+        });
+
+        function showTestFeedback(msg, success) {
+            apiTestFeedback.textContent = msg;
+            apiTestFeedback.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200', 'bg-red-50', 'text-red-800', 'border-red-200', 'bg-blue-50', 'text-blue-800', 'border-blue-200');
+            if (success === true) {
+                apiTestFeedback.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200');
+            } else if (success === false) {
+                apiTestFeedback.classList.add('bg-red-50', 'text-red-800', 'border', 'border-red-200');
+            } else {
+                apiTestFeedback.classList.add('bg-blue-50', 'text-blue-800', 'border', 'border-blue-200');
+            }
+        }
+
+        // ==========================================
+        // File Input, Drag-and-Drop & Clipboard Paste
+        // ==========================================
+        fileUpload.addEventListener('change', (event) => {
+            if (!event.target.files || event.target.files.length === 0) return;
+            handleFiles(event.target.files);
+            fileUpload.value = '';
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('bg-blue-200/70', 'border-blue-500');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('bg-blue-200/70', 'border-blue-500');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('bg-blue-200/70', 'border-blue-500');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Support pasting screenshots directly (Ctrl+V)
+        window.addEventListener('paste', (e) => {
+            if (settingsDialog.open) return;
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            const pastedFiles = [];
+            for (const item of items) {
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    if (file) {
+                        const ext = file.type.split('/')[1] || 'png';
+                        const namedFile = file.name && file.name !== 'image.png'
+                            ? file
+                            : new File([file], `Screenshot_${Date.now()}.${ext}`, { type: file.type || 'image/png' });
+                        pastedFiles.push(namedFile);
+                    }
+                }
+            }
+            if (pastedFiles.length > 0) {
+                handleFiles(pastedFiles);
+                showInfo(`Na-paste ang ${pastedFiles.length} image(s) mula sa clipboard!`);
+            }
+        });
+
+        clearAllBtn.addEventListener('click', () => {
+            revokeAllPreviewUrls();
+            selectedFiles = [];
+            globalResults = [];
+            resultsContainer.innerHTML = '';
+            exportControls.classList.add('hidden');
+            renderPreviews();
+        });
+
+        function revokeAllPreviewUrls() {
+            selectedFiles.forEach(item => {
+                if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+            });
+        }
+
+        function handleFiles(files) {
+            const newItems = Array.from(files).map(file => ({
+                file,
+                previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : null
+            }));
+            selectedFiles = [...selectedFiles, ...newItems];
+            resultsContainer.innerHTML = '';
+            exportControls.classList.add('hidden');
+            globalResults = [];
+            renderPreviews();
+        }
+
+        function renderPreviews() {
+            previewContainer.innerHTML = '';
+
+            if (selectedFiles.length === 0) {
+                queueHeader.classList.add('hidden');
+                previewContainer.classList.add('hidden');
+                actionContainer.classList.add('hidden');
+                return;
+            }
+
+            queueHeader.classList.remove('hidden');
+            fileCountLabel.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} ready (pwedeng i-reorder)`;
+            previewContainer.classList.remove('hidden');
+            actionContainer.classList.remove('hidden');
+
+            selectedFiles.forEach((item, index) => {
+                const { file, previewUrl } = item;
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative group rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 flex flex-col items-center justify-center h-36';
+
+                // Remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.type = 'button';
+                removeBtn.setAttribute('aria-label', 'Alisin ang file');
+                removeBtn.className = 'absolute top-1.5 right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity z-10 shadow';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                };
+                wrapper.appendChild(removeBtn);
+
+                // Reorder buttons
+                if (selectedFiles.length > 1) {
+                    const reorderBar = document.createElement('div');
+                    reorderBar.className = 'absolute top-1.5 left-1.5 flex gap-1 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity';
+
+                    if (index > 0) {
+                        const leftBtn = document.createElement('button');
+                        leftBtn.type = 'button';
+                        leftBtn.textContent = '←';
+                        leftBtn.title = 'Move Left';
+                        leftBtn.className = 'bg-slate-900/75 hover:bg-slate-900 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center';
+                        leftBtn.onclick = (e) => { e.stopPropagation(); moveFile(index, -1); };
+                        reorderBar.appendChild(leftBtn);
+                    }
+                    if (index < selectedFiles.length - 1) {
+                        const rightBtn = document.createElement('button');
+                        rightBtn.type = 'button';
+                        rightBtn.textContent = '→';
+                        rightBtn.title = 'Move Right';
+                        rightBtn.className = 'bg-slate-900/75 hover:bg-slate-900 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center';
+                        rightBtn.onclick = (e) => { e.stopPropagation(); moveFile(index, 1); };
+                        reorderBar.appendChild(rightBtn);
+                    }
+                    wrapper.appendChild(reorderBar);
+                }
+
+                // Preview Content
+                if (previewUrl) {
+                    const img = document.createElement('img');
+                    img.src = previewUrl;
+                    img.alt = file.name;
+                    img.className = 'w-full h-full object-cover';
+                    wrapper.appendChild(img);
+                } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+                    const iconWrapper = document.createElement('div');
+                    iconWrapper.className = 'flex flex-col items-center justify-center w-full px-3';
+                    iconWrapper.innerHTML = `<svg class="w-11 h-11 text-red-500 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>`;
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'text-xs font-semibold text-slate-700 text-center truncate w-full';
+                    nameSpan.title = file.name;
+                    nameSpan.textContent = file.name;
+                    iconWrapper.appendChild(nameSpan);
+                    wrapper.appendChild(iconWrapper);
+                } else if (file.name.toLowerCase().endsWith('.pptx') || file.type.includes('presentation')) {
+                    const iconWrapper = document.createElement('div');
+                    iconWrapper.className = 'flex flex-col items-center justify-center w-full px-3';
+                    iconWrapper.innerHTML = `<svg class="w-11 h-11 text-orange-500 mb-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>`;
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'text-xs font-semibold text-slate-700 text-center truncate w-full';
+                    nameSpan.title = file.name;
+                    nameSpan.textContent = file.name;
+                    iconWrapper.appendChild(nameSpan);
+                    wrapper.appendChild(iconWrapper);
+                } else {
+                    const label = document.createElement('span');
+                    label.className = 'text-xs font-semibold px-2 text-center truncate w-full text-slate-700';
+                    label.title = file.name;
+                    label.textContent = `${file.name} (No preview)`;
+                    wrapper.appendChild(label);
+                }
+
+                // Slide number badge
+                const badge = document.createElement('div');
+                badge.className = 'absolute bottom-1.5 left-1.5 bg-blue-600/90 text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow-sm';
+                badge.textContent = `Slide ${index + 1}`;
+                wrapper.appendChild(badge);
+
+                previewContainer.appendChild(wrapper);
+            });
+        }
+
+        function removeFile(index) {
+            const removed = selectedFiles.splice(index, 1)[0];
+            if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+            renderPreviews();
+        }
+
+        function moveFile(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= selectedFiles.length) return;
+            [selectedFiles[index], selectedFiles[target]] = [selectedFiles[target], selectedFiles[index]];
+            renderPreviews();
+        }
+
+        // ==========================================
+        // Gemini API Call with Auto-Fallback Chain
+        // ==========================================
+        async function generateWithFallback({ apiKey, prompt, mimeType, base64Data, slideIndex, totalSlides }) {
+            // Auto-discover live models once if not yet discovered, so 404s never block the user
+            if (discoveredLiveModels.length === 0) {
+                try {
+                    await discoverAvailableModels(apiKey);
+                } catch (e) {
+                    // If key itself is invalid, fail immediately with a clear message
+                    if (/api key|permission|unauthenticated|invalid/i.test(e.message || '')) {
+                        throw new Error(`Invalid API Key: ${e.message}. Pakicheck ang iyong key sa Settings.`);
+                    }
+                }
+            }
+
+            const modelChain = getModelFallbackChain();
+            let lastErrorMessage = 'Hindi ma-proseso ang dokumento.';
+
+            for (let m = 0; m < modelChain.length; m++) {
+                const model = modelChain[m];
+                const isFallback = m > 0;
+
+                loadingStatusText.textContent = isFallback
+                    ? `Slide ${slideIndex}/${totalSlides} — Nag-fallback sa ${model}...`
+                    : `Analyzing Slide ${slideIndex} of ${totalSlides} (${model})...`;
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+                const payload = {
+                    contents: [{
+                        role: 'user',
+                        parts: [
+                            { text: prompt },
+                            {
+                                inlineData: {
+                                    mimeType: mimeType || 'application/octet-stream',
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }]
+                };
+
+                // Quick retry on transient 429 before switching to fallback model
+                let attempts = 2;
+                let delay = 1000;
+
+                for (let attempt = 1; attempt <= attempts; attempt++) {
+                    try {
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            const generatedText = result.candidates?.[0]?.content?.parts
+                                ?.map(p => p.text || '')
+                                .join('')
+                                .trim();
+
+                            if (generatedText) {
+                                return {
+                                    text: generatedText,
+                                    modelUsed: model,
+                                    usedFallback: isFallback
+                                };
+                            }
+                            lastErrorMessage = 'Walang naibalik na text mula sa AI.';
+                            break; // Try next fallback model
+                        }
+
+                        lastErrorMessage = result.error?.message || `HTTP ${response.status}`;
+
+                        // Stop immediately on invalid API key / auth failure (no point retrying fallback models)
+                        if ((response.status === 400 || response.status === 401 || response.status === 403) &&
+                            /api key|permission|unauthenticated|invalid/i.test(lastErrorMessage)) {
+                            throw new Error(`Invalid API Key: ${lastErrorMessage}. Pakicheck ang iyong key sa Settings.`);
+                        }
+
+                        // If rate-limited or temporarily overloaded, wait briefly then retry once or fall back
+                        if (response.status === 429 || response.status === 503 || response.status === 500) {
+                            if (attempt < attempts) {
+                                await new Promise(r => setTimeout(r, delay));
+                                delay *= 2;
+                                continue;
+                            }
+                            // Exhausted retries for this model -> fall through to next model in chain
+                            break;
+                        }
+
+                        // 404 or unsupported model -> try next fallback model immediately
+                        if (response.status === 404) {
+                            break;
+                        }
+
+                        // Other 4xx errors (e.g. unsupported mime type)
+                        throw new Error(`API Error sa Slide ${slideIndex} (${model}): ${lastErrorMessage}`);
+                    } catch (err) {
+                        // Re-throw fatal errors (like invalid key)
+                        if (err.message.startsWith('Invalid API Key:') || err.message.startsWith('API Error sa Slide')) {
+                            throw err;
+                        }
+                        lastErrorMessage = err.message || 'Network error';
+                        if (attempt < attempts) {
+                            await new Promise(r => setTimeout(r, delay));
+                            delay *= 2;
+                        }
+                    }
+                }
+            }
+
+            throw new Error(`Hindi ma-proseso ang Slide ${slideIndex} kahit nag-fallback na (${modelChain.join(' → ')}): ${lastErrorMessage}`);
+        }
+
+        // ==========================================
+        // Analyze Files Button Handler
+        // ==========================================
+        analyzeBtn.addEventListener('click', async () => {
+            if (selectedFiles.length === 0) return;
+
+            const { apiKey } = getSettings();
+            if (!apiKey) {
+                showError('Kailangan muna ng Gemini API Key! Buksan ang Settings at sundin ang step-by-step guide.');
+                openSettingsModal(true);
+                return;
+            }
+
+            hideError();
+            hideInfo();
+            analyzeBtn.disabled = true;
+            loadingIcon.classList.remove('hidden');
+            exportControls.classList.add('hidden');
+            globalResults = [];
+            resultsContainer.innerHTML = '';
+            globalLoading.classList.remove('hidden');
+            globalLoading.classList.add('flex');
+            progressBar.style.width = '5%';
+
+            let fallbackTriggeredCount = 0;
+
+            try {
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const { file } = selectedFiles[i];
+                    const dataUrl = await readFileAsDataURL(file);
+                    const base64Data = extractBase64FromDataUrl(dataUrl);
+                    let mimeType = file.type;
+
+                    if (file.name.toLowerCase().endsWith('.pptx') && !mimeType) {
+                        mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                    }
+
+                    const userTopic = topicInput.value.trim();
+                    const roleInstruction = userTopic
+                        ? `Act as an engaging, friendly Filipino instructor specializing in "${userTopic}" teaching a class.`
+                        : `First, identify the exact subject or topic of the provided document (e.g., Science, Math, History, Business, Literature, Programming, Medicine, etc.), and act as an engaging, friendly Filipino instructor specializing in that specific subject teaching a class.`;
+
+                    const greetingInstruction = i === 0
+                        ? "Start with a short, cheerful Taglish greeting as if starting a class (e.g., 'Good day, class! Ready na ba kayo for today's topic?' or 'Hello everyone, tara pag-usapan natin 'to!'). "
+                        : "DO NOT greet the class anymore; jump straight into the explanation. ";
+
+                    const prompt = `${roleInstruction} ${greetingInstruction}Explain the content of the provided document using natural, conversational Taglish—the way a relatable Filipino college or senior high instructor actually talks in class. Avoid stiff, overly deep, or forced Tagalog translations; blend English and Tagalog smoothly so it feels effortless and easy to understand.\n\nFor each concept or definition on the slide, strictly follow this format:\n\n**Definition:** Give a clear explanation of the concept in natural Taglish (keep standard English/technical terms as-is so it doesn't sound forced).\n\n**Quick Check (Listening Check):** Right in the middle of explaining the concept, insert a short, casual question about what you just explained to check if the class is still listening and following along (e.g., "Wait lang class, nakikinig pa ba? Quick question lang—...", "Gising pa ba lahat? Based sa na-explain natin, ano nga ulit yung...?"). Keep it brief and directly tied to the concept.\n\n**Expected Quick Check Answer & Why:** Right after the Quick Check question, provide the expected answer and a brief 1–2 sentence explanation in natural Taglish on why that is the correct answer (e.g., "**Expected Answer:** ... — **Bakit?** Kasi...").\n\n**Instructor's Analogy:** Continue the explanation with a relatable, real-world analogy suited to the topic (ideally familiar to everyday Filipino life). Keep the tone friendly, encouraging, and in natural Taglish, with a concrete example if helpful.\n\nDo not invent new concepts or slides; only explain the material present in the provided document.`;
+
+                    const responseObj = await generateWithFallback({
+                        apiKey,
+                        prompt,
+                        mimeType,
+                        base64Data,
+                        slideIndex: i + 1,
+                        totalSlides: selectedFiles.length
+                    });
+
+                    if (responseObj.usedFallback) fallbackTriggeredCount++;
+
+                    const resultRecord = {
+                        slide: i + 1,
+                        filename: file.name,
+                        text: responseObj.text,
+                        modelUsed: responseObj.modelUsed,
+                        usedFallback: responseObj.usedFallback,
+                        isImage: file.type.startsWith('image/'),
+                        dataUrl,
+                        mimeType: mimeType || 'application/octet-stream'
+                    };
+
+                    globalResults.push(resultRecord);
+                    renderResult(resultRecord);
+
+                    const pct = Math.round(((i + 1) / selectedFiles.length) * 100);
+                    progressBar.style.width = `${pct}%`;
+                }
+
+                if (globalResults.length > 0) {
+                    exportControls.classList.remove('hidden');
+                    if (fallbackTriggeredCount > 0) {
+                        showInfo(`Tapos na! Gumamit ng automatic fallback model sa ${fallbackTriggeredCount} slide(s) para tuloy-tuloy ang explanation. Pwede mo nang i-export bilang PowerPoint (.pptx)!`);
+                    } else {
+                        showInfo(`Tapos na ang explanation ng ${globalResults.length} slide(s)! I-click ang "Export PPTX (.pptx)" para maging PowerPoint na may Speaker Notes at Explanation.`);
+                    }
+                }
+            } catch (error) {
+                console.error('Analysis Error:', error);
+                showError(error.message || 'Hindi maka-connect sa AI. Pakisubukan muli.');
+            } finally {
+                analyzeBtn.disabled = false;
+                loadingIcon.classList.add('hidden');
+                globalLoading.classList.add('hidden');
+                globalLoading.classList.remove('flex');
+            }
+        });
+
+        // ==========================================
+        // File & Markdown Helpers (XSS-Safe)
+        // ==========================================
+        function readFileAsDataURL(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.toString());
+                reader.onerror = (err) => reject(err);
+            });
+        }
+
+        function extractBase64FromDataUrl(dataUrl) {
+            let encoded = dataUrl.replace(/^data:(.*,)?/, '');
+            if (encoded.length % 4 > 0) {
+                encoded += '='.repeat(4 - (encoded.length % 4));
+            }
+            return encoded;
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatMarkdown(rawText) {
+            const safe = escapeHtml(rawText);
+            const lines = safe.split(/\r?\n/);
+            let html = '';
+            let inUl = false;
+            let inOl = false;
+
+            const formatInline = (line) => line
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`([^`]+)`/g, '<code class="bg-blue-100/70 px-1 py-0.5 rounded text-xs font-mono">$1</code>');
+
+            const closeLists = () => {
+                if (inUl) { html += '</ul>'; inUl = false; }
+                if (inOl) { html += '</ol>'; inOl = false; }
+            };
+
+            for (const rawLine of lines) {
+                const line = rawLine.trim();
+                if (!line) {
+                    closeLists();
+                    continue;
+                }
+                if (line.startsWith('### ')) {
+                    closeLists();
+                    html += `<h3>${formatInline(line.slice(4))}</h3>`;
+                } else if (line.startsWith('## ')) {
+                    closeLists();
+                    html += `<h2>${formatInline(line.slice(3))}</h2>`;
+                } else if (line.startsWith('# ')) {
+                    closeLists();
+                    html += `<h1>${formatInline(line.slice(2))}</h1>`;
+                } else if (/^[-*]\s+/.test(line)) {
+                    if (inOl) { html += '</ol>'; inOl = false; }
+                    if (!inUl) { html += '<ul>'; inUl = true; }
+                    html += `<li>${formatInline(line.replace(/^[-*]\s+/, ''))}</li>`;
+                } else if (/^\d+\.\s+/.test(line)) {
+                    if (inUl) { html += '</ul>'; inUl = false; }
+                    if (!inOl) { html += '<ol>'; inOl = true; }
+                    html += `<li>${formatInline(line.replace(/^\d+\.\s+/, ''))}</li>`;
+                } else {
+                    closeLists();
+                    html += `<p>${formatInline(line)}</p>`;
+                }
+            }
+            closeLists();
+            return html;
+        }
+
+        function stripMarkdown(text) {
+            return text
+                .replace(/^#{1,6}\s+/gm, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1')
+                .replace(/`([^`]+)`/g, '$1')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        }
+
+        function renderResult(record) {
+            const { slide, filename, text, modelUsed, usedFallback, isImage, dataUrl } = record;
+            const formattedHTML = formatMarkdown(text);
+
+            const resultBox = document.createElement('article');
+            resultBox.className = 'bg-blue-50/70 border border-blue-200 p-5 sm:p-6 rounded-2xl shadow-sm w-full';
+
+            const modelBadgeClass = usedFallback
+                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                : 'bg-indigo-100 text-indigo-800 border border-indigo-200';
+            const modelBadgeText = usedFallback ? `Fallback: ${modelUsed}` : modelUsed;
+
+            resultBox.innerHTML = `
+                <div class="border-b border-blue-200 pb-3 mb-4 flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg">Slide ${slide}</span>
+                        <h3 class="text-lg sm:text-xl font-bold text-blue-950 truncate" title="${escapeHtml(filename)}">${escapeHtml(filename)}</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] px-2.5 py-1 rounded-full font-semibold ${modelBadgeClass}">${escapeHtml(modelBadgeText)}</span>
+                        <button type="button" class="copy-slide-btn text-xs bg-white hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg font-semibold transition-colors">
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="flex flex-col ${isImage ? 'md:flex-row' : ''} gap-5">
+                    ${isImage ? `
+                        <div class="md:w-56 lg:w-64 flex-shrink-0">
+                            <div class="rounded-xl overflow-hidden border border-blue-200 bg-white shadow-sm">
+                                <img src="${dataUrl}" alt="Slide ${slide}" class="w-full h-auto max-h-60 object-contain bg-slate-900/5" />
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1.5 text-center">Included in PPTX + Speaker Notes</p>
+                        </div>
+                    ` : ''}
+                    <div class="markdown-body text-slate-800 flex-grow min-w-0">
+                        ${formattedHTML}
+                    </div>
+                </div>
+            `;
+
+            const copyBtn = resultBox.querySelector('.copy-slide-btn');
+            copyBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+                } catch {
+                    copyBtn.textContent = 'Error';
+                }
+            });
+
+            resultsContainer.appendChild(resultBox);
+        }
+
+        // ==========================================
+        // PowerPoint (.pptx) Export with Images + Notes + Explanation
+        // ==========================================
+        function getImageDimensions(dataUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve({ width: img.naturalWidth || 16, height: img.naturalHeight || 9 });
+                img.onerror = () => resolve({ width: 16, height: 9 });
+                img.src = dataUrl;
+            });
+        }
+
+        function computeContainedBox(imgW, imgH, boxX, boxY, boxW, boxH) {
+            const imgRatio = imgW / imgH;
+            const boxRatio = boxW / boxH;
+            let w, h;
+            if (imgRatio > boxRatio) {
+                w = boxW;
+                h = boxW / imgRatio;
+            } else {
+                h = boxH;
+                w = boxH * imgRatio;
+            }
+            const x = boxX + (boxW - w) / 2;
+            const y = boxY + (boxH - h) / 2;
+            return { x, y, w, h };
+        }
+
+        function parseMarkdownToPptxRuns(text, baseFontSize = 13) {
+            const runs = [];
+            const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+
+            lines.forEach((rawLine) => {
+                let line = rawLine.trim();
+                let isHeading = false;
+                let isBullet = false;
+
+                if (/^#{1,3}\s+/.test(line)) {
+                    isHeading = true;
+                    line = line.replace(/^#{1,3}\s+/, '');
+                } else if (/^[-*]\s+/.test(line)) {
+                    isBullet = true;
+                    line = '• ' + line.replace(/^[-*]\s+/, '');
+                }
+
+                // Split by **bold** tokens
+                const tokens = line.split(/(\*\*.*?\*\*)/g).filter(Boolean);
+                tokens.forEach((tok, idx) => {
+                    const isLastToken = idx === tokens.length - 1;
+                    const isBoldToken = tok.startsWith('**') && tok.endsWith('**');
+                    const cleanText = isBoldToken ? tok.slice(2, -2) : tok.replace(/\*(.*?)\*/g, '$1');
+
+                    runs.push({
+                        text: cleanText,
+                        options: {
+                            fontSize: isHeading ? baseFontSize + 2 : baseFontSize,
+                            bold: isHeading || isBoldToken,
+                            color: isHeading ? '1E3A8A' : (isBoldToken ? '0F172A' : '334155'),
+                            breakLine: isLastToken,
+                            paraSpaceAfter: isLastToken ? (isBullet ? 4 : 7) : 0
+                        }
+                    });
+                });
+            });
+
+            return runs;
+        }
+
+        function splitTextIntoChunks(text, maxChars = 1350) {
+            const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+            const chunks = [];
+            let current = '';
+
+            for (const para of paragraphs) {
+                if (current && (current.length + para.length + 2) > maxChars) {
+                    chunks.push(current.trim());
+                    current = para;
+                } else {
+                    current = current ? `${current}\n\n${para}` : para;
+                }
+            }
+            if (current.trim()) chunks.push(current.trim());
+            return chunks.length > 0 ? chunks : [text];
+        }
+
+        exportPptxBtn.addEventListener('click', async () => {
+            if (globalResults.length === 0) return;
+
+            if (typeof PptxGenJS === 'undefined') {
+                showError('Hindi na-load ang PptxGenJS library. Pakicheck ang internet connection at i-refresh ang page.');
+                return;
+            }
+
+            exportPptxBtn.disabled = true;
+            const originalLabel = exportPptxBtn.innerHTML;
+            exportPptxBtn.innerHTML = '<span>Generating PPTX...</span>';
+
+            try {
+                const pptx = new PptxGenJS();
+                pptx.layout = 'LAYOUT_WIDE'; // 13.333 x 7.5 inches (16:9)
+                pptx.author = 'Study Master: AI Instructor';
+                const userTopic = topicInput.value.trim();
+                const deckTitle = userTopic || 'Study Master: AI Instructor Deck';
+                pptx.title = deckTitle;
+
+                const layoutMode = pptxLayoutSelect.value; // 'paired' | 'notes_only' | 'split'
+                const todayStr = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                // ---- 1. Title Slide ----
+                const titleSlide = pptx.addSlide();
+                titleSlide.background = { color: '1E3A8A' };
+                titleSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.35, h: 7.5, fill: { color: '3B82F6' } });
+                titleSlide.addText('STUDY MASTER • AI INSTRUCTOR DECK', {
+                    x: 1.0, y: 1.8, w: 11.3, h: 0.45,
+                    fontSize: 13, bold: true, color: '93C5FD', charSpacing: 2
+                });
+                titleSlide.addText(deckTitle, {
+                    x: 1.0, y: 2.35, w: 11.3, h: 1.6,
+                    fontSize: 40, bold: true, color: 'FFFFFF', valign: 'top'
+                });
+                titleSlide.addText(`Taglish Lecture Slides with Speaker Notes & Explanations\n${globalResults.length} Uploaded Slide${globalResults.length > 1 ? 's' : ''}  •  ${todayStr}`, {
+                    x: 1.0, y: 4.3, w: 11.3, h: 1.0,
+                    fontSize: 16, color: 'DBEAFE', lineSpacingMultiple: 1.35
+                });
+                titleSlide.addNotes(`Study Master Deck: ${deckTitle}\nGenerated on ${todayStr}\nTip: Use Presenter View in PowerPoint to read the Taglish Speaker Notes while showing each slide.`);
+
+                // ---- 2. Content Slides ----
+                for (const res of globalResults) {
+                    const plainNotes = `SLIDE ${res.slide}: ${res.filename}\n(Model: ${res.modelUsed})\n\n${stripMarkdown(res.text)}`;
+
+                    if (res.isImage) {
+                        const dims = await getImageDimensions(res.dataUrl);
+
+                        if (layoutMode === 'notes_only') {
+                            // 1 Slide: Full Uploaded Image + Speaker Notes
+                            const slide = pptx.addSlide();
+                            slide.background = { color: '0F172A' };
+
+                            // Subtle header bar
+                            slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.55, fill: { color: '1E293B' } });
+                            slide.addText(`Slide ${res.slide}  |  ${res.filename}`, {
+                                x: 0.4, y: 0.08, w: 10.5, h: 0.38,
+                                fontSize: 13, bold: true, color: 'E2E8F0', valign: 'middle'
+                            });
+                            slide.addText('See Speaker Notes for Taglish Explanation', {
+                                x: 9.8, y: 0.08, w: 3.2, h: 0.38,
+                                fontSize: 10, color: '94A3B8', align: 'right', valign: 'middle'
+                            });
+
+                            const box = computeContainedBox(dims.width, dims.height, 0.35, 0.7, 12.633, 6.5);
+                            slide.addImage({ data: res.dataUrl, x: box.x, y: box.y, w: box.w, h: box.h });
+                            slide.addNotes(plainNotes);
+
+                        } else if (layoutMode === 'split') {
+                            // 1 Slide (or continuation if long): Left Image + Right Explanation + Speaker Notes
+                            const chunks = splitTextIntoChunks(res.text, 950);
+                            chunks.forEach((chunk, chunkIdx) => {
+                                const slide = pptx.addSlide();
+                                slide.background = { color: 'F8FAFC' };
+
+                                // Top Banner
+                                slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.65, fill: { color: '1D4ED8' } });
+                                slide.addText(`Slide ${res.slide}${chunks.length > 1 ? ` (Part ${chunkIdx + 1}/${chunks.length})` : ''} — ${res.filename}`, {
+                                    x: 0.4, y: 0.1, w: 12.5, h: 0.45,
+                                    fontSize: 16, bold: true, color: 'FFFFFF', valign: 'middle'
+                                });
+
+                                // Left Image Frame
+                                slide.addShape(pptx.ShapeType.roundRect, {
+                                    x: 0.35, y: 0.9, w: 6.1, h: 6.2,
+                                    fill: { color: 'FFFFFF' }, line: { color: 'CBD5E1', pt: 1 }
+                                });
+                                const box = computeContainedBox(dims.width, dims.height, 0.5, 1.05, 5.8, 5.9);
+                                slide.addImage({ data: res.dataUrl, x: box.x, y: box.y, w: box.w, h: box.h });
+
+                                // Right Explanation Card
+                                slide.addShape(pptx.ShapeType.roundRect, {
+                                    x: 6.7, y: 0.9, w: 6.28, h: 6.2,
+                                    fill: { color: 'FFFFFF' }, line: { color: 'BFDBFE', pt: 1 }
+                                });
+                                const runs = parseMarkdownToPptxRuns(chunk, 11.5);
+                                slide.addText(runs, {
+                                    x: 6.95, y: 1.1, w: 5.8, h: 5.8,
+                                    valign: 'top', wrap: true, margin: 0
+                                });
+
+                                if (chunkIdx === 0) slide.addNotes(plainNotes);
+                            });
+
+                        } else {
+                            // Default 'paired': Slide A = Full Uploaded Image + Speaker Notes, Slide B = Explanation Slide(s)
+                            const imgSlide = pptx.addSlide();
+                            imgSlide.background = { color: '0F172A' };
+                            imgSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.55, fill: { color: '1E293B' } });
+                            imgSlide.addText(`Slide ${res.slide}  |  ${res.filename}`, {
+                                x: 0.4, y: 0.08, w: 9.5, h: 0.38,
+                                fontSize: 13, bold: true, color: 'FFFFFF', valign: 'middle'
+                            });
+                            imgSlide.addText('Notes & Explanation included in Speaker Notes & Next Slide', {
+                                x: 8.3, y: 0.08, w: 4.65, h: 0.38,
+                                fontSize: 10, color: '93C5FD', align: 'right', valign: 'middle'
+                            });
+                            const box = computeContainedBox(dims.width, dims.height, 0.35, 0.7, 12.633, 6.5);
+                            imgSlide.addImage({ data: res.dataUrl, x: box.x, y: box.y, w: box.w, h: box.h });
+                            imgSlide.addNotes(plainNotes);
+
+                            // Companion Explanation Slide(s)
+                            const chunks = splitTextIntoChunks(res.text, 1450);
+                            chunks.forEach((chunk, chunkIdx) => {
+                                const expSlide = pptx.addSlide();
+                                expSlide.background = { color: 'F8FAFC' };
+                                expSlide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.75, fill: { color: '1E40AF' } });
+                                expSlide.addText(`Slide ${res.slide} — Instructor Notes & Explanation${chunks.length > 1 ? ` (${chunkIdx + 1}/${chunks.length})` : ''}`, {
+                                    x: 0.5, y: 0.14, w: 12.3, h: 0.48,
+                                    fontSize: 18, bold: true, color: 'FFFFFF', valign: 'middle'
+                                });
+
+                                expSlide.addShape(pptx.ShapeType.roundRect, {
+                                    x: 0.45, y: 1.0, w: 12.43, h: 6.1,
+                                    fill: { color: 'FFFFFF' }, line: { color: 'BFDBFE', pt: 1 }
+                                });
+                                const runs = parseMarkdownToPptxRuns(chunk, 12.5);
+                                expSlide.addText(runs, {
+                                    x: 0.75, y: 1.2, w: 11.83, h: 5.7,
+                                    valign: 'top', wrap: true, margin: 0
+                                });
+
+                                expSlide.addNotes(plainNotes);
+                            });
+                        }
+                    } else {
+                        // Non-image files (PDF / PPTX): Explanation Slide(s) + Speaker Notes
+                        const chunks = splitTextIntoChunks(res.text, 1450);
+                        chunks.forEach((chunk, chunkIdx) => {
+                            const slide = pptx.addSlide();
+                            slide.background = { color: 'F8FAFC' };
+                            slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.75, fill: { color: '1E40AF' } });
+                            slide.addText(`Slide ${res.slide}: ${res.filename}${chunks.length > 1 ? ` (${chunkIdx + 1}/${chunks.length})` : ''}`, {
+                                x: 0.5, y: 0.14, w: 12.3, h: 0.48,
+                                fontSize: 17, bold: true, color: 'FFFFFF', valign: 'middle'
+                            });
+
+                            slide.addShape(pptx.ShapeType.roundRect, {
+                                x: 0.45, y: 1.0, w: 12.43, h: 6.1,
+                                fill: { color: 'FFFFFF' }, line: { color: 'BFDBFE', pt: 1 }
+                            });
+                            const runs = parseMarkdownToPptxRuns(chunk, 12.5);
+                            slide.addText(runs, {
+                                x: 0.75, y: 1.2, w: 11.83, h: 5.7,
+                                valign: 'top', wrap: true, margin: 0
+                            });
+
+                            if (chunkIdx === 0) slide.addNotes(plainNotes);
+                        });
+                    }
+                }
+
+                const safeSlug = (userTopic || 'Study_Master_Deck').replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 40);
+                const fileName = `${safeSlug}_${new Date().toISOString().slice(0, 10)}.pptx`;
+                await pptx.writeFile({ fileName });
+                showInfo(`✅ Na-download na ang "${fileName}"! Buksan sa PowerPoint / Google Slides para makita ang slides at Speaker Notes.`);
+            } catch (err) {
+                console.error('PPTX Export Error:', err);
+                showError(`Hindi nagawa ang PPTX file: ${err.message || err}`);
+            } finally {
+                exportPptxBtn.disabled = false;
+                exportPptxBtn.innerHTML = originalLabel;
+            }
+        });
+
+        // ==========================================
+        // Export Notes as Markdown (.md)
+        // ==========================================
+        exportMdBtn.addEventListener('click', () => {
+            if (globalResults.length === 0) return;
+
+            const userTopic = topicInput.value.trim();
+            const titleHeader = userTopic ? `# ${userTopic} - Instructor Notes` : `# Study Master: Instructor Notes`;
+            let markdownContent = `${titleHeader}\n\nGenerated automatically via Study Master App.\n\n---\n\n`;
+
+            globalResults.forEach(res => {
+                markdownContent += `## Slide ${res.slide} (${res.filename}) — Model: ${res.modelUsed}\n\n`;
+                markdownContent += res.text + '\n\n---\n\n';
+            });
+
+            const blob = new Blob([markdownContent], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Instructor_Notes_${new Date().toISOString().slice(0, 10)}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // ==========================================
+        // Banner Helpers
+        // ==========================================
+        function showError(message) {
+            errorText.textContent = message;
+            errorBanner.classList.remove('hidden');
+            mainScroll.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function hideError() {
+            errorBanner.classList.add('hidden');
+        }
+
+        function showInfo(message) {
+            infoText.textContent = message;
+            infoBanner.classList.remove('hidden');
+        }
+
+        function hideInfo() {
+            infoBanner.classList.add('hidden');
+        }
+
+        dismissErrorBtn.addEventListener('click', hideError);
+        dismissInfoBtn.addEventListener('click', hideInfo);
+
+        // Initialize UI on load
+        syncSettingsUI();
+    </script>
+</body>
+
+</html>
